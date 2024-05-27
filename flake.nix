@@ -186,6 +186,11 @@
             cargo-watch
             rustToolchain
             alejandra
+
+            # deps
+            openssl
+            pkg-config
+
           ];
         };
 
