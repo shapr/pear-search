@@ -1,25 +1,36 @@
-use pear_search::lib::print_hello_world;
-use serde_json;
-use serde_json::Value;
-use std::error::Error;
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
+use std::{
+    collections::HashMap,
+    error::Error,
+    sync::{Arc, Mutex},
+};
 
-fn main() {
-    // let webpage = "https://totbwf.github.io/posts/tactic-haskell.html";
-    let bookmarks = "bookmarks-2024-05-27.json";
-    // let bookmarks_text = fs::read_to_string(bookmarks).unwrap();
-    let bm_json = get_bookmark_json(bookmarks).unwrap();
-    println!("{}", bm_json);
-    print_hello_world();
+use reqwest::get;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let links = ["www.google.com", "www.jacobzim.com", "www.recurse.com"];
+    let content_cache = Arc::new(Mutex::new(HashMap::new()));
+
+    for link in links {
+        add_uri_to_cache(&(String::from("https://") + link), content_cache.clone())
+            .await
+            .unwrap();
+    }
+
+    println!("{:?}", content_cache);
+    Ok(())
 }
 
-fn get_bookmark_json<P: AsRef<Path>>(path: P) -> Result<Value, Box<dyn Error>> {
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
-
-    let u = serde_json::from_reader(reader)?;
-
-    Ok(u)
+// return true iff in cache
+async fn add_uri_to_cache(
+    uri: &str,
+    cache: Arc<Mutex<HashMap<String, String>>>,
+) -> Result<bool, reqwest::Error> {
+    let resp = get(uri).await?;
+    let text = resp.text().await?;
+    {
+        let mut internal_cache_locked = cache.lock().unwrap();
+        internal_cache_locked.insert(uri.to_string(), text);
+    }
+    Ok(true)
 }
