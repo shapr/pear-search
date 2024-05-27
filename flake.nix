@@ -189,6 +189,7 @@
 
             # deps
             openssl
+            openssl.dev
             pkg-config
 
           ];
@@ -198,6 +199,9 @@
           {
             name = "RUSTFLAGS";
             eval = "\"${builtins.toString craneCommon.RUSTFLAGS}\"";
+          }
+          {name = "PKG_CONFIG_PATH";
+           eval = "${pkgs.openssl.dev}/lib/pkgconfig";
           }
         ];
         };
